@@ -1,0 +1,86 @@
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: stellar
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: stellar
+    spec:
+      containers:
+        - image: gcr.io/cloudsql-docker/gce-proxy:1.09
+          name: cloudsql-proxy
+          command: ["/cloud_sql_proxy", "--dir=/cloudsql",
+                    "-instances=${DATABASE_INSTANCE}",
+                    "-credential_file=/secrets/cloudsql/credentials.json"]
+          volumeMounts:
+            - name: cloudsql-instance-credentials
+              mountPath: /secrets/cloudsql
+              readOnly: true
+            - name: ssl-certs
+              mountPath: /etc/ssl/certs
+            - name: cloudsql
+              mountPath: /cloudsql
+        - name: horizon
+          image: "${STELLAR_HORIZON_IMAGE}"
+          ports:
+          - name: horizon-http
+            containerPort: 8000
+          env:
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stellar-database-credentials
+                  key: STELLAR_HORIZON_DATABASE_URL
+            - name: STELLAR_CORE_DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stellar-database-credentials
+                  key: STELLAR_CORE_DATABASE_URL
+            - name: STELLAR_CORE_URL
+              value: "http://$(STELLAR_SERVICE_HOST):$(STELLAR_SERVICE_PORT_CORE_PEER)"
+            - name: INGEST
+              value: "true"
+        - name: core
+          image: "${STELLAR_CORE_IMAGE}"
+          ports:
+          - name: core-http
+            containerPort: 11625
+          - name: core-peer
+            containerPort: 11626
+          env:
+            - name: ARCHIVE_NAME
+              value: gcloud
+            - name: STELLAR_CORE_CFG_URL
+              value: "${STELLAR_CORE_CFG}"
+            - name: PROJECT
+              valueFrom:
+                secretKeyRef:
+                  name: gs-access-key
+                  key: PROJECT
+            - name: GS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: gs-access-key
+                  key: GS_ACCESS_KEY_ID
+            - name: GS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: gs-access-key
+                  key: GS_SECRET_ACCESS_KEY
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: stellar-database-credentials
+                  key: STELLAR_CORE_DATABASE_URL
+      volumes:
+        - name: cloudsql-instance-credentials
+          secret:
+            secretName: cloudsql-instance-credentials
+        - name: ssl-certs
+          hostPath:
+            path: /etc/ssl/certs
+        - name: cloudsql
+          emptyDir:
