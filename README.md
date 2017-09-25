@@ -43,7 +43,7 @@ envsubst < resources/service.yaml | kubectl create -f -
 ## Deployment
 Deploy Stellar node application's pod:
 ```
-envsubst < resources/deployment.yaml | ubectl create -f -
+envsubst < resources/deployment.yaml | kubectl create -f -
 ```
 #Maintenance
 To modify the deployment:
