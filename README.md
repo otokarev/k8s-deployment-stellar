@@ -15,19 +15,17 @@ envsubst < resource.yaml | command
 ```
 will read `resource.yaml`, substitute environment variables that we have just set and pass the result to the pipe.
 
+## Volums
+```text
+gcloud compute disks create core-data --size 200GB --type pd-standard --zone europe-west1-d
+```
+
 ## Secrets
 Create a service account with `Cloud SQL Client` role. Store json-file with private key localy (e.g. in `stellar-sql-client-key.json`)
 
-Deploy database client credentials:
+Deploy database client credentials (the same credentials are used to send archives to buckets by gsutil):
 ```text
 kubectl create secret generic cloudsql-instance-credentials --from-file=credentials.json=./stellar-sql-client-key.json
-```
-Deploy gsutil credentials secret:
-```
-kubectl create secret generic gs-access-key \
-    --from-literal=PROJECT="${PROJECT}" \
-    --from-literal=GS_ACCESS_KEY_ID="${GS_ACCESS_KEY_ID}" \
-    --from-literal=GS_SECRET_ACCESS_KEY="${GS_SECRET_ACCESS_KEY}"
 ```
 Deploy database credentials secret:
 ```
@@ -46,6 +44,12 @@ Deploy Stellar node application's pod:
 envsubst < resources/deployment.yaml | kubectl create -f -
 ```
 #Maintenance
+Pod cannot be launched if disk `core-data` is attached to any compute. To detach run in console:
+```text
+for i in `gcloud compute instances list | gawk 'NR>1 {print $1}'`; do gcloud compute instances detach-disk $i --zone europe-west1-d --disk=core-da
+ta; done
+```
+
 To modify the deployment:
 ```
 kubectl edit deployment/stellar --save-config

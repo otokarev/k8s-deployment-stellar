@@ -53,30 +53,30 @@ spec:
           env:
             - name: ARCHIVE_NAME
               value: gcloud
+            - name: NONEWHIST
+              value: "yes"
+            - name: NONEWDB
+              value: "yes"
+            - name: ARCHIVE_NAME
+              value: gcloud
             - name: STELLAR_CORE_CFG_URL
               value: "${STELLAR_CORE_CFG}"
-            - name: PROJECT
-              valueFrom:
-                secretKeyRef:
-                  name: gs-access-key
-                  key: PROJECT
-            - name: GS_ACCESS_KEY_ID
-              valueFrom:
-                secretKeyRef:
-                  name: gs-access-key
-                  key: GS_ACCESS_KEY_ID
-            - name: GS_SECRET_ACCESS_KEY
-              valueFrom:
-                secretKeyRef:
-                  name: gs-access-key
-                  key: GS_SECRET_ACCESS_KEY
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: stellar-database-credentials
                   key: STELLAR_CORE_DATABASE_URL
+          volumeMounts:
+            - name: storage-credentials
+              mountPath: /secrets/gcloud/storage/
+              readOnly: true
+            - name: core-data
+              mountPath: /data
       volumes:
         - name: cloudsql-instance-credentials
+          secret:
+            secretName: cloudsql-instance-credentials
+        - name: storage-credentials
           secret:
             secretName: cloudsql-instance-credentials
         - name: ssl-certs
@@ -84,3 +84,7 @@ spec:
             path: /etc/ssl/certs
         - name: cloudsql
           emptyDir:
+        - name: core-data
+          gcePersistentDisk:
+            pdName: "${STELLAR_CORE_DATA_DISK}"
+            fsType: ext4
