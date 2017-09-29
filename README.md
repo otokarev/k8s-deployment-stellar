@@ -46,8 +46,7 @@ envsubst < resources/deployment.yaml | kubectl create -f -
 #Maintenance
 Pod cannot be launched if disk `core-data` is attached to any compute. To detach run in console:
 ```text
-for i in `gcloud compute instances list | gawk 'NR>1 {print $1}'`; do gcloud compute instances detach-disk $i --zone europe-west1-d --disk=core-da
-ta; done
+for i in `gcloud compute instances list | gawk 'NR>1 {print $1}'`; do gcloud compute instances detach-disk $i --zone europe-west1-d --disk=${STELLAR_CORE_DATA_DISK}; done
 ```
 
 To modify the deployment:

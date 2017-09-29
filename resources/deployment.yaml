@@ -51,6 +51,8 @@ spec:
           - name: core-peer
             containerPort: 11626
           env:
+            - name: GS_BUCKET_ARCHIVES_PATH
+              value: "${STELLAR_CORE_ARCHIVES_PATH}"
             - name: ARCHIVE_NAME
               value: gcloud
             - name: NONEWHIST
